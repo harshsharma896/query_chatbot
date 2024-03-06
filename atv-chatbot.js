@@ -1,5 +1,6 @@
 class ATVChatbot {
   constructor(make, model, year) {
+    this.injectContent();
     this.make = make;
     this.model = model;
     this.year = year;
@@ -18,13 +19,89 @@ class ATVChatbot {
     this.userMessage = null;
     this.assistantId = null;
     this.chatQuery = null;
-    this.inputInitHeight = this.chatInput.scrollHeight;
+    this.inputHeight =
+      document.querySelector(".chatbot__textarea").scrollHeight;
     this.init();
+  }
+  injectContent() {
+    // Create button element
+    const chatbotToggle = document.createElement("button");
+    chatbotToggle.classList.add("chatbot__button");
+
+    // Create span elements for button icons
+    const spanModeComment = document.createElement("span");
+    spanModeComment.classList.add("material-symbols-outlined");
+    spanModeComment.textContent = "mode_comment";
+
+    const spanClose = document.createElement("span");
+    spanClose.classList.add("material-symbols-outlined");
+    spanClose.textContent = "close";
+
+    // Append spans to button
+    chatbotToggle.appendChild(spanModeComment);
+    chatbotToggle.appendChild(spanClose);
+
+    // Create div for chatbot
+    const chatbotDiv = document.createElement("div");
+    chatbotDiv.classList.add("chatbot");
+
+    // Create header for chatbot
+    const chatBotCloseBtn = document.createElement("div");
+    chatBotCloseBtn.classList.add("chatbot__header");
+
+    // Create title for header
+    const title = document.createElement("h3");
+    title.classList.add("chatbox__title");
+    title.textContent = "ATV Chatbot";
+
+    // Create close span for header
+    const closeSpanHeader = document.createElement("span");
+    closeSpanHeader.classList.add("material-symbols-outlined");
+    closeSpanHeader.textContent = "close";
+
+    // Append title and close span to header
+    chatBotCloseBtn.appendChild(title);
+    chatBotCloseBtn.appendChild(closeSpanHeader);
+
+    // Create ul for chat messages
+    const chatBox = document.createElement("ul");
+    chatBox.classList.add("chatbot__box");
+
+    // Create div for input box
+    const sendChatBtn = document.createElement("div");
+    sendChatBtn.classList.add("chatbot__input-box");
+
+    // Create textarea for input
+    const chatInput = document.createElement("textarea");
+    chatInput.classList.add("chatbot__textarea");
+    chatInput.placeholder = "Enter a message...";
+    chatInput.required = true;
+
+    // Create send button span
+    const sendBtnSpan = document.createElement("span");
+    sendBtnSpan.id = "send-btn";
+    sendBtnSpan.classList.add("material-symbols-outlined");
+    sendBtnSpan.textContent = "send";
+
+    // Append textarea and send button to input box
+    sendChatBtn.appendChild(chatInput);
+    sendChatBtn.appendChild(sendBtnSpan);
+
+    // Append header, ul, and input box to chatbot div
+    chatbotDiv.appendChild(chatBotCloseBtn);
+    chatbotDiv.appendChild(chatBox);
+    chatbotDiv.appendChild(sendChatBtn);
+
+    // Append button and chatbot div to body
+    document.getElementById('atv-chatbot').appendChild(chatbotToggle);
+    document.getElementById("atv-chatbot").appendChild(chatbotDiv);
+      // document.body.appendChild(chatbotToggle);
+      // document.body.appendChild(chatbotDiv);
   }
 
   init() {
     this.chatInput.addEventListener("input", () => {
-      this.chatInput.style.height = `${this.inputInitHeight}px`;
+      this.chatInput.style.height = `${this.inputHeight}px`;
       this.chatInput.style.height = `${this.chatInput.scrollHeight}px`;
     });
 
@@ -37,11 +114,11 @@ class ATVChatbot {
     });
 
     this.chatbotToggle.addEventListener("click", () =>
-      document.body.classList.toggle("show-chatbot")
+      document.getElementById("atv-chatbot").classList.toggle("show-chatbot")
     );
 
     this.chatBotCloseBtn.addEventListener("click", () =>
-      document.body.classList.remove("show-chatbot")
+      document.getElementById("atv-chatbot").classList.remove("show-chatbot")
     );
 
     this.sendChatBtn.addEventListener("click", () => {
@@ -93,8 +170,8 @@ class ATVChatbot {
       await this.handleChat(this.userMessage);
     });
     return suggestionBtn;
-  };
-  
+  }
+
   createChatLiItem(message, className) {
     const chatLi = document.createElement("li");
     chatLi.classList.add("chatbot__chat", className);
@@ -105,7 +182,7 @@ class ATVChatbot {
     chatLi.innerHTML = chatContent;
     chatLi.querySelector("p").textContent = message;
     return chatLi;
-  };
+  }
 
   async generateResponse(incomingChatLi, userMessage) {
     const messageElement = incomingChatLi.querySelector("p");
@@ -153,11 +230,7 @@ class ATVChatbot {
         data?.new_suggestions?.forEach((intent) => {
           this.createSuggestion(intent, "incoming");
           chatLi.appendChild(
-            this.createSuggestion(
-              intent,
-              "incoming",
-              "query_without_json_data"
-            )
+            this.createSuggestion(intent, "incoming", "query_without_json_data")
           );
           this.chatBox.append(chatLi);
           this.chatBox.scrollTo(0, this.chatBox.scrollHeight);
@@ -172,7 +245,7 @@ class ATVChatbot {
       messageElement.textContent = "Oops! Please try again!";
       console.log(error);
     }
-  };
+  }
 
   async handleChat(userMessage) {
     this.chatInput.value = "";
