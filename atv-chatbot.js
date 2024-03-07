@@ -19,14 +19,21 @@ class ATVChatbot {
     this.userMessage = null;
     this.assistantId = null;
     this.chatQuery = null;
+    this.defaultMessage =
+      "I am a super smart AI assistant that can answer any question about this ATV. Type your own or select from the suggested questions";
     this.inputHeight =
       document.querySelector(".chatbot__textarea").scrollHeight;
     this.init();
   }
+
   injectContent() {
     // Create button element
     const chatbotToggle = document.createElement("button");
     chatbotToggle.classList.add("chatbot__button");
+
+    //create span for chatbot title
+    const chatBotTitle = document.createElement("p");
+    chatBotTitle.innerText = "Ask me anything";
 
     // Create span elements for button icons
     const spanModeComment = document.createElement("span");
@@ -39,7 +46,7 @@ class ATVChatbot {
 
     // Append spans to button
     chatbotToggle.appendChild(spanModeComment);
-    chatbotToggle.appendChild(spanClose);
+    chatbotToggle.appendChild(chatBotTitle);
 
     // Create div for chatbot
     const chatbotDiv = document.createElement("div");
@@ -93,10 +100,8 @@ class ATVChatbot {
     chatbotDiv.appendChild(sendChatBtn);
 
     // Append button and chatbot div to body
-    document.getElementById('atv-chatbot').appendChild(chatbotToggle);
+    document.getElementById("atv-chatbot").appendChild(chatbotToggle);
     document.getElementById("atv-chatbot").appendChild(chatbotDiv);
-      // document.body.appendChild(chatbotToggle);
-      // document.body.appendChild(chatbotDiv);
   }
 
   init() {
@@ -128,9 +133,59 @@ class ATVChatbot {
     this.createAssistant();
   }
 
+  // to create loading svg icon on chatbot replies
+  createSvgLoadingIcon() {
+    const svgIcon = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "svg"
+    );
+    svgIcon.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svgIcon.setAttribute("width", "40");
+    svgIcon.setAttribute("height", "40");
+    svgIcon.setAttribute("viewBox", "0 0 24 24");
+
+    const circles = [
+      { cx: "18", cy: "12", begin: ".67" },
+      { cx: "12", cy: "12", begin: ".33" },
+      { cx: "6", cy: "12", begin: "0" },
+    ];
+
+    circles.forEach((circle) => {
+      const circleElement = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle"
+      );
+      circleElement.setAttribute("cx", circle.cx);
+      circleElement.setAttribute("cy", circle.cy);
+      circleElement.setAttribute("r", "0");
+      circleElement.setAttribute("fill", "#c8511a");
+
+      const animateElement = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "animate"
+      );
+      animateElement.setAttribute("attributeName", "r");
+      animateElement.setAttribute("begin", circle.begin);
+      animateElement.setAttribute("calcMode", "spline");
+      animateElement.setAttribute("dur", "1.5s");
+      animateElement.setAttribute(
+        "keySplines",
+        "0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8;0.2 0.2 0.4 0.8"
+      );
+      animateElement.setAttribute("repeatCount", "indefinite");
+      animateElement.setAttribute("values", "0;2;0;0");
+
+      circleElement.appendChild(animateElement);
+      svgIcon.appendChild(circleElement);
+    });
+
+    return svgIcon;
+  }
+
   async createAssistant() {
     try {
       const intialMessage = this.createChatLiItem("Thinking...", "incoming");
+      intialMessage.querySelector("p").appendChild(this.createSvgLoadingIcon());
       this.chatBox.appendChild(intialMessage);
 
       const formData = new FormData();
@@ -178,10 +233,16 @@ class ATVChatbot {
     let chatContent =
       className === "outgoing"
         ? `<p></p>`
-        : `<span class="material-symbols-outlined">smart_toy</span> <p></p>`;
+        : `<span class=""><img src='./chat-icon.svg' /></span> <p></p>`;
     chatLi.innerHTML = chatContent;
     chatLi.querySelector("p").textContent = message;
     return chatLi;
+  }
+
+  // to handle the if chat does not response
+  handleError() {
+    messageElement.classList.add("error");
+    messageElement.textContent = "Oops! Please try again!";
   }
 
   async generateResponse(incomingChatLi, userMessage) {
@@ -206,7 +267,6 @@ class ATVChatbot {
         let firstElement = data?.answer.slice(0, 1);
         let remainingElements = data?.answer.slice(1);
         messageElement.textContent = firstElement;
-
         // to add the remaining element to suggestions
         const chatLi = document.createElement("li");
         chatLi.classList.add("suggestion_box", "chatbot__chat");
@@ -223,7 +283,8 @@ class ATVChatbot {
           this.chatBox.scrollTo(0, this.chatBox.scrollHeight);
         });
       } else if (data?.new_suggestions) {
-        messageElement.remove();
+        messageElement.textContent = this.defaultMessage;
+
         // reuse
         const chatLi = document.createElement("li");
         chatLi.classList.add("suggestion_box", "chatbot__chat");
@@ -236,20 +297,17 @@ class ATVChatbot {
           this.chatBox.scrollTo(0, this.chatBox.scrollHeight);
         });
       } else {
-        messageElement.classList.add("error");
-        messageElement.textContent = "Oops! Please try again!";
-        console.log("error");
+        this.handleError();
       }
     } catch (error) {
       messageElement.classList.add("error");
       messageElement.textContent = "Oops! Please try again!";
-      console.log(error);
     }
   }
 
   async handleChat(userMessage) {
     this.chatInput.value = "";
-    this.chatInput.style.height = `${this.inputInitHeight}px`;
+    this.chatInput.style.height = `${this.inputHeight}px`;
 
     if (this.chatQuery != "intial_query_without_json_data") {
       this.chatBox.appendChild(this.createChatLiItem(userMessage, "outgoing"));
@@ -257,7 +315,10 @@ class ATVChatbot {
     this.chatBox.scrollTo(0, this.chatBox.scrollHeight);
     setTimeout(() => {
       let incomingChatLi;
-      incomingChatLi = this.createChatLiItem("Thinking...", "incoming");
+      incomingChatLi = this.createChatLiItem("", "incoming");
+      incomingChatLi
+        .querySelector("p")
+        .appendChild(this.createSvgLoadingIcon()); //append loading svg
       this.chatBox.appendChild(incomingChatLi);
       this.chatBox.scrollTo(0, this.chatBox.scrollHeight);
       this.generateResponse(incomingChatLi, userMessage, this.assistantId);
